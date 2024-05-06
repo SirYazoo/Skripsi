@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Main.java to edit this template
- */
 package com.skripsi.skripsi;
 
 import java.io.BufferedInputStream;
@@ -19,10 +15,6 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.Stack;
 
-/**
- *
- * @author rioau
- */
 public class Arsip {
 
     public static void main(String[] args) throws IOException {
@@ -102,7 +94,7 @@ public class Arsip {
             System.out.print("Enter the path to the archive file: ");
             String archiveFilePath = reader.readLine();
 
-            archiveFilesToExistingArchive(new File(sourceDir), archiveFilePath, "");
+            archiveFilesToExistingArchive(new File(sourceDir), archiveFilePath);
             System.out.println("Files archived successfully.");
         } else {
             System.out.println("Invalid choice.");
@@ -146,136 +138,6 @@ public class Arsip {
         dos.close();
         bos.close();
         fos.close();
-    }
-
-    private static void archiveFilesToExistingArchive(File dir, String archiveFilePath, String basePath)
-            throws IOException {
-        List<File> filesToAdd = new ArrayList<>();
-        checkExistingArchive(dir, archiveFilePath, basePath, filesToAdd);
-
-        for (File fileToAdd : filesToAdd) {
-            String entryName = basePath + fileToAdd.getPath().replace(dir.getPath() + File.separator, "");
-            replaceFileInArchive(archiveFilePath, entryName, fileToAdd);
-        }
-    }
-
-    private static void checkExistingArchive(File dir, String archiveFilePath, String basePath, List<File> filesToAdd)
-            throws IOException {
-        FileOutputStream fos = new FileOutputStream(archiveFilePath, true);
-        BufferedOutputStream bos = new BufferedOutputStream(fos);
-        DataOutputStream dos = new DataOutputStream(bos);
-
-        File[] files = dir.listFiles();
-
-        if (files != null) {
-            for (File file : files) {
-                if (file.isDirectory()) {
-                    String directoryName = basePath + file.getName() + "/";
-                    if (entryExistsInArchive(archiveFilePath, directoryName)) {
-                    System.out.println("Directory already exists in the archive: " + directoryName);
-                    }
-                    System.out.println("Checking Directory: " + basePath + file.getName() + "/");
-                    checkExistingArchive(file, archiveFilePath, basePath + file.getName() + "/", filesToAdd);                                                                                                 // sini
-                } else {
-                    String entryName = basePath + file.getPath().replace(dir.getPath() + File.separator, "");
-
-                    if (entryExistsInArchive(archiveFilePath, entryName)) {
-                        System.out.println("File already exists in the archive: " + entryName);
-                        filesToAdd.add(file);
-                    } else {
-                        dos.writeUTF(entryName);
-                        dos.writeLong(file.length());
-                        System.out.println("Archiving File: " + entryName);
-                        FileInputStream fis = new FileInputStream(file);
-                        byte[] buffer = new byte[(int) file.length()];
-                        fis.read(buffer);
-                        dos.write(buffer);
-                        fis.close();
-                    }
-                }
-            }
-        }
-        dos.close();
-        bos.close();
-        fos.close();
-    }
-
-    private static boolean entryExistsInArchive(String archiveFilePath, String entryName) throws IOException {
-        FileInputStream fis = new FileInputStream(archiveFilePath);
-        BufferedInputStream bis = new BufferedInputStream(fis);
-        DataInputStream dis = new DataInputStream(bis);
-
-        while (dis.available() > 0) {
-            String existingEntry = dis.readUTF();
-            dis.readLong();
-            dis.skipBytes((int) dis.readLong());
-
-            if (existingEntry.equals(entryName) || (existingEntry.startsWith(entryName))) {
-                dis.close();
-                bis.close();
-                fis.close();
-                return true;
-            }
-        }
-
-        dis.close();
-        bis.close();
-        fis.close();
-        return false;
-    }
-
-    private static void replaceFileInArchive(String archiveFilePath, String entryName, File newFile)
-            throws IOException {
-        File tempFile = new File("temp" + archiveFilePath);
-
-        FileInputStream fis = new FileInputStream(archiveFilePath);
-        BufferedInputStream bis = new BufferedInputStream(fis);
-        DataInputStream dis = new DataInputStream(bis);
-
-        FileOutputStream fos = new FileOutputStream(tempFile);
-        BufferedOutputStream bos = new BufferedOutputStream(fos);
-        DataOutputStream dos = new DataOutputStream(bos);
-
-        while (dis.available() > 0) {
-            String existingEntry = dis.readUTF();
-            long fileSize = dis.readLong();
-            byte[] buffer = new byte[(int) fileSize];
-            dis.readFully(buffer);
-
-            if (!existingEntry.equals(entryName)) {
-                dos.writeUTF(existingEntry);
-                dos.writeLong(fileSize);
-                dos.write(buffer);
-            }
-        }
-
-        // Add the new file to the archive
-        dos.writeUTF(entryName);
-        dos.writeLong(newFile.length());
-        FileInputStream newFis = new FileInputStream(newFile);
-        byte[] newBuffer = new byte[(int) newFile.length()];
-        newFis.read(newBuffer);
-        dos.write(newBuffer);
-
-        newFis.close();
-        dos.close();
-        bos.close();
-        fos.close();
-        dis.close();
-        bis.close();
-        fis.close();
-
-        // Replace the original archive file with the temporary file
-        File originalFile = new File(archiveFilePath);
-        if (originalFile.delete()) {
-            if (!tempFile.renameTo(originalFile)) {
-                System.out.println("Failed to rename the temporary archive file.");
-            } else {
-                System.out.println("File '" + entryName + "' replaced successfully.");
-            }
-        } else {
-            System.out.println("Failed to delete the original archive file.");
-        }
     }
 
     private static void extractFiles(String archiveFilePath, String extractionDir) throws IOException {
@@ -495,4 +357,66 @@ public class Arsip {
             System.out.println("No entry found matching '" + entryToDelete + "'.");
         }
     }
+
+    private static void archiveFilesToExistingArchive(File dir, String archiveFilePath) throws IOException {
+        FileInputStream fis = new FileInputStream(archiveFilePath);
+        BufferedInputStream bis = new BufferedInputStream(fis);
+        DataInputStream dis = new DataInputStream(bis);
+
+        List<String> existingFiles = new ArrayList<>();
+        while (dis.available() > 0) {
+            String entryName = dis.readUTF();
+            long fileSize = dis.readLong();
+            existingFiles.add(entryName);
+            dis.skipBytes((int) fileSize);
+        }
+
+        dis.close();
+        bis.close();
+        fis.close();
+
+        FileOutputStream fos = new FileOutputStream(archiveFilePath, true);
+        BufferedOutputStream bos = new BufferedOutputStream(fos);
+        DataOutputStream dos = new DataOutputStream(bos);
+
+        archiveFiles(dir, archiveFilePath, "", existingFiles, dos);
+
+        dos.close();
+        bos.close();
+        fos.close();
+    }
+
+    private static void archiveFiles(File dir, String archiveFilePath, String basePath, List<String> existingFiles, DataOutputStream dos) throws IOException {
+        if (basePath != "") {
+            dos.writeUTF(basePath);
+            dos.writeLong(0);
+            System.out.println("Created Directory: " + basePath);
+        }
+
+        File[] files = dir.listFiles();
+
+        if (files != null) {
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    System.out.println("Archiving Directory: " + basePath + file.getName() + "/");
+                    archiveFiles(file, archiveFilePath, basePath + file.getName() + "/", existingFiles, dos);
+                } else {
+                    String entryName = basePath + file.getPath().replace(dir.getPath() + File.separator, "");
+                    if (existingFiles.contains(entryName)) {
+                        deleteEntry(archiveFilePath, entryName);
+                    }
+                    dos.writeUTF(entryName);
+                    dos.writeLong(file.length());
+                    System.out.println("Archiving File: " + entryName);
+
+                    FileInputStream fis = new FileInputStream(file);
+                    byte[] buffer = new byte[(int) file.length()];
+                    fis.read(buffer);
+                    dos.write(buffer);
+                    fis.close();
+                }
+            }
+        }
+    }
 }
+
