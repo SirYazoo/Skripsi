@@ -57,12 +57,12 @@ public class Arsip {
 
             extractFiles(archiveFilePathExtract, extractionDir);
             System.out.println("Files extracted successfully.");
-        } else if (choice == 3) { 
+        } else if (choice == 3) {
             System.out.print("Enter the path to the archive file: ");
             String archiveFilePathList = reader.readLine();
 
-            listArchiveContents(archiveFilePathList); 
-        } else if (choice == 4) { 
+            listArchiveContents(archiveFilePathList);
+        } else if (choice == 4) {
             System.out.print("Enter the path to the archive file: ");
             String archiveFilePathExtract = reader.readLine();
 
@@ -74,7 +74,7 @@ public class Arsip {
 
             extractSpecificFile(archiveFilePathExtract, extractionDir, entryToExtract);
             System.out.println("Specific file extracted successfully.");
-        } else if (choice == 5) { 
+        } else if (choice == 5) {
             System.out.print("Enter the path to the archive file: ");
             String archiveFilePathExtract = reader.readLine();
 
@@ -86,7 +86,7 @@ public class Arsip {
 
             extractSpecificFolder(archiveFilePathExtract, extractionDir, entryToExtract);
             System.out.println("Specific folder extracted successfully.");
-        } else if (choice == 6) { 
+        } else if (choice == 6) {
             System.out.print("Enter the path to the archive file: ");
             String archiveFilePathDelete = reader.readLine();
 
@@ -115,10 +115,11 @@ public class Arsip {
         BufferedOutputStream bos = new BufferedOutputStream(fos);
         DataOutputStream dos = new DataOutputStream(bos);
 
-        // Write the directory entry
-        // dos.writeUTF(basePath);
-        // dos.writeLong(0); // Indicate it as a directory with file size 0
-        // System.out.println("Archiving Directory: " + basePath);
+        if (basePath != "") {
+            dos.writeUTF(basePath);
+            dos.writeLong(0);
+            System.out.println("Created Directory: " + basePath);
+        }
 
         File[] files = dir.listFiles();
 
@@ -142,7 +143,6 @@ public class Arsip {
                 }
             }
         }
-
         dos.close();
         bos.close();
         fos.close();
@@ -150,27 +150,32 @@ public class Arsip {
 
     private static void archiveFilesToExistingArchive(File dir, String archiveFilePath, String basePath)
             throws IOException {
+        List<File> filesToAdd = new ArrayList<>();
+        checkExistingArchive(dir, archiveFilePath, basePath, filesToAdd);
+
+        for (File fileToAdd : filesToAdd) {
+            String entryName = basePath + fileToAdd.getPath().replace(dir.getPath() + File.separator, "");
+            replaceFileInArchive(archiveFilePath, entryName, fileToAdd);
+        }
+    }
+
+    private static void checkExistingArchive(File dir, String archiveFilePath, String basePath, List<File> filesToAdd)
+            throws IOException {
         FileOutputStream fos = new FileOutputStream(archiveFilePath, true);
         BufferedOutputStream bos = new BufferedOutputStream(fos);
         DataOutputStream dos = new DataOutputStream(bos);
-
-        // Write the directory entry
-        // dos.writeUTF(basePath);
-        // dos.writeLong(0); // Indicate it as a directory with file size 0
-        // System.out.println("Archiving Directory: " + basePath);
-        List<File> filesToAdd = new ArrayList<>();
 
         File[] files = dir.listFiles();
 
         if (files != null) {
             for (File file : files) {
                 if (file.isDirectory()) {
-                    // if (entryExistsInArchive(archiveFilePath, directoryName)) {
-                    // System.out.println("Directory already exists in the archive: " +
-                    // directoryName);
-                    // }
-                    System.out.println("Archiving Directory: " + basePath + file.getName() + "/");
-                    archiveFilesToExistingArchive(file, archiveFilePath, basePath + file.getName() + "/");
+                    String directoryName = basePath + file.getName() + "/";
+                    if (entryExistsInArchive(archiveFilePath, directoryName)) {
+                    System.out.println("Directory already exists in the archive: " + directoryName);
+                    }
+                    System.out.println("Checking Directory: " + basePath + file.getName() + "/");
+                    checkExistingArchive(file, archiveFilePath, basePath + file.getName() + "/", filesToAdd);                                                                                                 // sini
                 } else {
                     String entryName = basePath + file.getPath().replace(dir.getPath() + File.separator, "");
 
@@ -181,7 +186,6 @@ public class Arsip {
                         dos.writeUTF(entryName);
                         dos.writeLong(file.length());
                         System.out.println("Archiving File: " + entryName);
-
                         FileInputStream fis = new FileInputStream(file);
                         byte[] buffer = new byte[(int) file.length()];
                         fis.read(buffer);
@@ -191,13 +195,6 @@ public class Arsip {
                 }
             }
         }
-
-        // Replace existing files with new files
-        for (File fileToAdd : filesToAdd) {
-            String entryName = basePath + fileToAdd.getPath().replace(dir.getPath() + File.separator, "");
-            replaceFileInArchive(archiveFilePath, entryName, fileToAdd);
-        }
-
         dos.close();
         bos.close();
         fos.close();
@@ -299,22 +296,12 @@ public class Arsip {
             } else if (!entryName.isEmpty()) {
                 byte[] fileContent = new byte[(int) fileSize];
                 dis.readFully(fileContent);
-                String relativePath;
-                if (entryName.contains("/")) {
-                    relativePath = entryName.substring(0, entryName.lastIndexOf("/"));
-                } else {
-                    relativePath = "";
-                }
-                File directory = new File(extractionDir + File.separator + relativePath);
-                directory.mkdirs();
-
                 FileOutputStream fos = new FileOutputStream(extractionDir + File.separator + entryName);
                 fos.write(fileContent);
                 fos.close();
                 System.out.println("Extracting File: " + entryName);
             }
         }
-
         dis.close();
         bis.close();
         fis.close();
@@ -336,10 +323,9 @@ public class Arsip {
                 if (parentDir != null) {
                     File parentDirectory = new File(extractionDir + File.separator + parentDir);
                     parentDirectory.mkdirs();
-                    System.out.println(parentDirectory);
+                    // System.out.println(parentDirectory);
                     byte[] fileContent = new byte[(int) fileSize];
                     dis.readFully(fileContent);
-
                     FileOutputStream fos = new FileOutputStream(extractionDir + File.separator + entryName);
                     fos.write(fileContent);
                     fos.close();
@@ -377,7 +363,6 @@ public class Arsip {
                 } else {
                     byte[] fileContent = new byte[(int) fileSize];
                     dis.readFully(fileContent);
-
                     FileOutputStream fos = new FileOutputStream(extractionDir + File.separator + entryName);
                     fos.write(fileContent);
                     fos.close();
@@ -478,8 +463,7 @@ public class Arsip {
             byte[] buffer = new byte[(int) fileSize];
             dis.readFully(buffer);
 
-            if (!entryName.equals(entryToDelete)
-                    && !(entryName.startsWith(entryToDelete) && entryName.charAt(entryToDelete.length()) == '/')) {
+            if (!entryName.equals(entryToDelete) && !(entryName.startsWith(entryToDelete))) {
                 dos.writeUTF(entryName);
                 dos.writeLong(fileSize);
                 dos.write(buffer);
