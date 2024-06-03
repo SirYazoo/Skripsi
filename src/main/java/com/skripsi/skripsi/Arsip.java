@@ -10,6 +10,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -17,7 +19,7 @@ import java.util.Stack;
 
 public class Arsip {
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 
         System.out.println("Choose an option:");
@@ -102,7 +104,8 @@ public class Arsip {
         }
     }
 
-    private static void archiveFiles(File dir, String archiveFilePath, String basePath) throws IOException {
+    private static void archiveFiles(File dir, String archiveFilePath, String basePath)
+            throws IOException, NoSuchAlgorithmException {
         FileOutputStream fos = new FileOutputStream(archiveFilePath, true);
         BufferedOutputStream bos = new BufferedOutputStream(fos);
         DataOutputStream dos = new DataOutputStream(bos);
@@ -132,6 +135,10 @@ public class Arsip {
                     dos.write(buffer);
                     fis.close();
 
+                    // Calculate and store MD5 checksum for each file
+                    String checksum = calculateMD5(file);
+                    dos.writeUTF(checksum);
+
                 }
             }
         }
@@ -140,7 +147,8 @@ public class Arsip {
         fos.close();
     }
 
-    private static void extractFiles(String archiveFilePath, String extractionDir) throws IOException {
+    private static void extractFiles(String archiveFilePath, String extractionDir)
+            throws IOException, NoSuchAlgorithmException {
         FileInputStream fis = new FileInputStream(archiveFilePath);
         BufferedInputStream bis = new BufferedInputStream(fis);
         DataInputStream dis = new DataInputStream(bis);
@@ -162,6 +170,15 @@ public class Arsip {
                 fos.write(fileContent);
                 fos.close();
                 System.out.println("Extracting File: " + entryName);
+
+                // Validate checksum of extracted files
+                String storedChecksum = dis.readUTF();
+                String extractedChecksum = calculateMD5(new File(extractionDir + File.separator + entryName));
+                if (extractedChecksum.equals(storedChecksum)) {
+                    System.out.println("Checksum matched for file: " + entryName);
+                } else {
+                    System.out.println("Checksum mismatch for file: " + entryName);
+                }
             }
         }
         dis.close();
@@ -170,7 +187,7 @@ public class Arsip {
     }
 
     private static void extractSpecificFile(String archiveFilePath, String extractionDir, String entryToExtract)
-            throws IOException {
+            throws IOException, NoSuchAlgorithmException {
         FileInputStream fis = new FileInputStream(archiveFilePath);
         BufferedInputStream bis = new BufferedInputStream(fis);
         DataInputStream dis = new DataInputStream(bis);
@@ -180,18 +197,21 @@ public class Arsip {
             long fileSize = dis.readLong();
 
             if (entryName.equals(entryToExtract)) {
-                String parentDir = new File(entryToExtract).getParent();
-                // System.out.println(parentDir);
-                if (parentDir != null) {
-                    File parentDirectory = new File(extractionDir + File.separator + parentDir);
-                    parentDirectory.mkdirs();
-                    // System.out.println(parentDirectory);
-                    byte[] fileContent = new byte[(int) fileSize];
-                    dis.readFully(fileContent);
-                    FileOutputStream fos = new FileOutputStream(extractionDir + File.separator + entryName);
-                    fos.write(fileContent);
-                    fos.close();
-                    System.out.println("Extracting File: " + entryName);
+                String fileName = entryName.substring(entryName.lastIndexOf("/"), entryName.length());
+                byte[] fileContent = new byte[(int) fileSize];
+                dis.readFully(fileContent);
+                FileOutputStream fos = new FileOutputStream(extractionDir + File.separator + fileName);
+                fos.write(fileContent);
+                fos.close();
+                System.out.println("Extracting File: " + entryName);
+
+                // Validate checksum of extracted files
+                String storedChecksum = dis.readUTF();
+                String extractedChecksum = calculateMD5(new File(extractionDir + File.separator + fileName));
+                if (extractedChecksum.equals(storedChecksum)) {
+                    System.out.println("Checksum matched for file: " + entryName);
+                } else {
+                    System.out.println("Checksum mismatch for file: " + entryName);
                 }
                 break;
             } else {
@@ -205,7 +225,7 @@ public class Arsip {
     }
 
     private static void extractSpecificFolder(String archiveFilePath, String extractionDir, String entryToExtract)
-            throws IOException {
+            throws IOException, NoSuchAlgorithmException {
         FileInputStream fis = new FileInputStream(archiveFilePath);
         BufferedInputStream bis = new BufferedInputStream(fis);
         DataInputStream dis = new DataInputStream(bis);
@@ -229,6 +249,15 @@ public class Arsip {
                     fos.write(fileContent);
                     fos.close();
                     System.out.println("Extracting File: " + entryName);
+
+                    // Validate checksum of extracted files
+                    String storedChecksum = dis.readUTF();
+                    String extractedChecksum = calculateMD5(new File(extractionDir + File.separator + entryName));
+                    if (extractedChecksum.equals(storedChecksum)) {
+                        System.out.println("Checksum matched for file: " + entryName);
+                    } else {
+                        System.out.println("Checksum mismatch for file: " + entryName);
+                    }
                 }
             } else {
                 dis.skipBytes((int) fileSize);
@@ -258,8 +287,16 @@ public class Arsip {
 
             while (dis.available() > 0) {
                 String entryName = dis.readUTF();
+                System.out.println("Entry Name: " + entryName);
                 long fileSize = dis.readLong();
+                System.out.println("File Size: " + fileSize);
+                // byte[] fileContent = new byte[(int) fileSize];
+                // dis.readFully(fileContent);
                 dis.skipBytes((int) fileSize);
+                // dis.skip(32);
+                // System.out.println(dis.readUTF());
+                // dis.readUTF();
+                
 
                 if (entryName.startsWith(currentPath.peek()) && entryName.length() > currentPath.peek().length()) {
                     String relativePath = entryName.substring(currentPath.peek().length());
@@ -272,6 +309,8 @@ public class Arsip {
                                 System.out.println("Directory: " + relativePath);
                             } else {
                                 System.out.println("File: " + relativePath + " (Size: " + fileSize + " bytes)");
+                                // String checksum = dis.readUTF();
+                                // System.out.println("Checksum: " + checksum);
                             }
                         }
                     }
@@ -358,7 +397,8 @@ public class Arsip {
         }
     }
 
-    private static void archiveFilesToExistingArchive(File dir, String archiveFilePath) throws IOException {
+    private static void archiveFilesToExistingArchive(File dir, String archiveFilePath)
+            throws IOException, NoSuchAlgorithmException {
         FileInputStream fis = new FileInputStream(archiveFilePath);
         BufferedInputStream bis = new BufferedInputStream(fis);
         DataInputStream dis = new DataInputStream(bis);
@@ -386,7 +426,8 @@ public class Arsip {
         fos.close();
     }
 
-    private static void archiveFiles(File dir, String archiveFilePath, String basePath, List<String> existingFiles, DataOutputStream dos) throws IOException {
+    private static void archiveFiles(File dir, String archiveFilePath, String basePath, List<String> existingFiles,
+            DataOutputStream dos) throws IOException, NoSuchAlgorithmException {
         if (basePath != "") {
             dos.writeUTF(basePath);
             dos.writeLong(0);
@@ -409,6 +450,10 @@ public class Arsip {
                     dos.writeLong(file.length());
                     System.out.println("Archiving File: " + entryName);
 
+                    // Calculate and store MD5 checksum for each file
+                    String checksum = calculateMD5(file);
+                    dos.writeUTF(checksum);
+
                     FileInputStream fis = new FileInputStream(file);
                     byte[] buffer = new byte[(int) file.length()];
                     fis.read(buffer);
@@ -418,5 +463,27 @@ public class Arsip {
             }
         }
     }
-}
 
+    // Calculate MD5 checksum of a file
+    private static String calculateMD5(File file) throws IOException, NoSuchAlgorithmException {
+        MessageDigest md = MessageDigest.getInstance("MD5");
+        FileInputStream fis = new FileInputStream(file);
+        byte[] dataBytes = new byte[(int) file.length()];
+
+        int bytesRead;
+        while ((bytesRead = fis.read(dataBytes)) != -1) {
+            md.update(dataBytes, 0, bytesRead);
+        }
+
+        fis.close();
+
+        byte[] mdBytes = md.digest();
+
+        StringBuilder sb = new StringBuilder();
+        for (byte mdByte : mdBytes) {
+            sb.append(String.format("%02X", mdByte));
+        }
+
+        return sb.toString();
+    }
+}
