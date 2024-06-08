@@ -16,7 +16,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
-import java.util.Stack;
 
 public class Arsip {
 
@@ -312,43 +311,43 @@ public class Arsip {
         BufferedInputStream bis = new BufferedInputStream(fis);
         DataInputStream dis = new DataInputStream(bis);
 
-        Stack<String> currentPath = new Stack<>();
-        currentPath.push(""); // root
+        List<String> entries = new ArrayList<>();
+        String currentPath = "";
+        while (dis.available() > 0) {
+            byte[] lengthBytes = new byte[5];
+            dis.readFully(lengthBytes);
+            int entryNameLength = Integer.parseInt(new String(lengthBytes, StandardCharsets.ISO_8859_1).trim());
+            // System.out.println("Entry Name Lenght: " + entryNameLength);
+            byte[] entryNameBytes = new byte[entryNameLength];
+            dis.readFully(entryNameBytes);
+            String entryName = new String(entryNameBytes, StandardCharsets.ISO_8859_1);
+            // System.out.println("Entry Name: " + entryName);
+            long fileSize = dis.readLong();
+            // System.out.println("File Size: " + fileSize);
+            if (!entryName.endsWith("/")) {
+                dis.skipBytes((int) fileSize + 32);
+            }
+            entries.add(entryName);
+        }
+        dis.close();
+        bis.close();
+        fis.close();
+        System.out.println(entries.toString());
 
         Scanner scanner = new Scanner(System.in);
-        String userInput;
-
-        ArrayList<String> folderNames = new ArrayList<>();
         while (true) {
-            System.out.println("Current Directory: " + currentPath.peek());
+            System.out.println("Current Directory: " + currentPath);
             System.out.println("Contents:");
 
-            while (dis.available() > 0) {
-                byte[] lengthBytes = new byte[5];
-                dis.readFully(lengthBytes);
-                int entryNameLength = Integer.parseInt(new String(lengthBytes, StandardCharsets.ISO_8859_1).trim());
-                // System.out.println("Entry Name Lenght: " + entryNameLength);
-                byte[] entryNameBytes = new byte[entryNameLength];
-                dis.readFully(entryNameBytes);
-                String entryName = new String(entryNameBytes, StandardCharsets.ISO_8859_1);
-                // System.out.println("Entry Name: " + entryName);
-                long fileSize = dis.readLong();
-                // System.out.println("File Size: " + fileSize);
-                if (!entryName.endsWith("/")) {
-                    dis.skipBytes((int) fileSize + 32);
-                }
-
-                if (entryName.startsWith(currentPath.peek()) && entryName.length() > currentPath.peek().length()) {
-                    String relativePath = entryName.substring(currentPath.peek().length());
-                    if (relativePath.indexOf("/") == -1 || relativePath.endsWith("/")) {
-                        if (!relativePath.isEmpty()) {
+            for (String entry : entries) {
+                if (entry.startsWith(currentPath)) {
+                    String relativePath = entry.substring(currentPath.length());
+                    if (!relativePath.isEmpty() && !relativePath.contains("/") || relativePath.endsWith("/")) {
+                        if (relativePath.indexOf("/") == relativePath.lastIndexOf("/")) {
                             if (relativePath.endsWith("/")) {
-                                if (!folderNames.contains(relativePath)) {
-                                    folderNames.add(relativePath);
-                                }
                                 System.out.println("Directory: " + relativePath);
                             } else {
-                                System.out.println("File: " + relativePath + " (Size: " + fileSize + " bytes)");
+                                System.out.println("File: " + relativePath);
                             }
                         }
                     }
@@ -356,31 +355,47 @@ public class Arsip {
             }
 
             System.out.print("Enter folder name to explore or '..' to go back (type 'stop' to exit): ");
-            userInput = scanner.nextLine();
+            String userInput = scanner.nextLine();
 
             if (userInput.equals("stop")) {
                 break;
             } else if (userInput.equals("..")) {
-                if (currentPath.size() > 1) {
-                    currentPath.pop();
+                if (!currentPath.isEmpty()) {
+                    if (currentPath.endsWith("/")) {
+                        currentPath = currentPath.substring(0, currentPath.length() - 1);
+                        // System.out.println(currentPath);
+                    }
+                    int lastSlash = currentPath.lastIndexOf("/");
+                    if (lastSlash > 0) {
+                        currentPath = currentPath.substring(0, lastSlash + 1);
+                        // System.out.println(currentPath);
+                    } else{
+                        currentPath = "";
+                    }
                 }
             } else {
-                String newPath = currentPath.peek() + userInput + "/";
-                if (folderNames.contains(newPath)) {
-                    currentPath.push(newPath);
+                String newPath;
+                if (currentPath.isEmpty()) {
+                    newPath = userInput + "/";
+                } else {
+                    newPath = currentPath + userInput + "/";
+                }
+                // System.out.println("New path: " + newPath);
+                boolean directoryExists = false;
+                for (String entry : entries) {
+                    if (entry.startsWith(newPath)) {
+                        directoryExists = true;
+                        break;
+                    }
+                }
+                if (directoryExists) {
+                    currentPath = newPath;
+                    // System.out.println("Current path: " + currentPath);
                 } else {
                     System.out.println("Invalid folder name. Please enter a valid folder name.");
                 }
             }
-
-            fis.getChannel().position(0);
-            bis = new BufferedInputStream(fis);
-            dis = new DataInputStream(bis);
         }
-
-        dis.close();
-        bis.close();
-        fis.close();
         scanner.close();
     }
 
@@ -485,10 +500,10 @@ public class Arsip {
             }
         }
         // Write updated entries
-        System.out.println(existingEntries.toString());
+        // System.out.println(existingEntries.toString());
         updateEntries(dir, "", existingEntries, dos);
-        System.out.println(existingEntries.toString());
-        
+        // System.out.println(existingEntries.toString());
+
         dos.close();
         bos.close();
         fos.close();
@@ -507,7 +522,7 @@ public class Arsip {
         } else {
             System.out.println("Failed to delete the original archive file.");
         }
-        
+
     }
 
     private static void updateEntries(File dir, String basePath, List<String> existingEntries,
