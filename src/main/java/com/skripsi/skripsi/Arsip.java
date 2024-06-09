@@ -116,7 +116,7 @@ public class Arsip {
             dos.writeBytes(lenghString);
             dos.writeBytes(entryName);
             dos.writeLong(0);
-            System.out.println("Created Directory: " + basePath); // Debug output
+            // System.out.println("Created Directory: " + basePath); // Debug output
         }
 
         File[] files = dir.listFiles();
@@ -537,6 +537,7 @@ public class Arsip {
                         existingEntries.remove(entryName);
                     }
                     writeEntry(file, entryName + "/", dos);
+                    existingEntries.add(entryName);
                     updateEntries(file, file.getName() + "/", existingEntries, dos);
                 } else {
                     if (existingEntries.contains(entryName)) {
