@@ -19,6 +19,8 @@ import java.util.Scanner;
 
 public class Arsip {
 
+    static List<String> sourceEntries = new ArrayList<>();
+
     public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 
@@ -500,8 +502,8 @@ public class Arsip {
         bis.close();
         fis.close();
 
-        List<String> sourceEntries = new ArrayList<>();
-        sourceEntries = checkSourceEntries(dir, "");
+        // List<String> sourceEntries = new ArrayList<>();
+        checkSourceEntries(dir, "");
         System.out.println("existing" + existingEntries.toString());
         System.out.println("source" + sourceEntries.toString());
         for (String entry : sourceEntries) {
@@ -513,13 +515,13 @@ public class Arsip {
         archiveFiles(dir, archiveFilePath, "");
     }
 
-    private static List<String> checkSourceEntries(File dir, String basePath)
+    private static void checkSourceEntries(File dir, String basePath)
             throws IOException, NoSuchAlgorithmException {
         File[] files = dir.listFiles();
-        List<String> sourceEntries = new ArrayList<>();
+        // List<String> sourceEntries = new ArrayList<>();
         if (basePath != "") {
             String entryName = basePath;
-            System.out.println("base entry" + entryName);
+            // System.out.println("base entry" + entryName);
             sourceEntries.add(entryName);
         }
         if (files != null) {
@@ -528,13 +530,12 @@ public class Arsip {
                     checkSourceEntries(file, basePath + file.getName() + "/");
                 } else {
                     String entryName = basePath + file.getPath().replace(dir.getPath() + File.separator, "");
-                    System.out.println("file entry" + entryName);
+                    // System.out.println("file entry" + entryName);
                     sourceEntries.add(entryName);
                 }
             }
         }
-        System.out.println(sourceEntries.toString());
-        return sourceEntries;
+        // System.out.println(sourceEntries.toString());
     }
 
     private static String calculateMD5(File file) throws IOException, NoSuchAlgorithmException {
