@@ -332,7 +332,7 @@ public class Arsip {
         dis.close();
         bis.close();
         fis.close();
-        System.out.println(entries.toString());
+        // System.out.println(entries.toString());
 
         Scanner scanner = new Scanner(System.in);
         while (true) {
@@ -369,7 +369,7 @@ public class Arsip {
                     if (lastSlash > 0) {
                         currentPath = currentPath.substring(0, lastSlash + 1);
                         // System.out.println(currentPath);
-                    } else{
+                    } else {
                         currentPath = "";
                     }
                 }
@@ -444,8 +444,10 @@ public class Arsip {
 
             } else {
                 found = true;
-                int skippedBytes = (int) fileSize + 32;
-                dis.skipBytes(skippedBytes);
+                if (!entryName.endsWith("/")) {
+                    int skippedBytes = (int) fileSize + 32;
+                    dis.skipBytes(skippedBytes);
+                }
             }
         }
 
@@ -475,14 +477,9 @@ public class Arsip {
 
     private static void updateArchiveWithDirectory(File dir, String archiveFilePath)
             throws IOException, NoSuchAlgorithmException {
-        File tempFile = new File("temp" + archiveFilePath);
         FileInputStream fis = new FileInputStream(archiveFilePath);
         BufferedInputStream bis = new BufferedInputStream(fis);
         DataInputStream dis = new DataInputStream(bis);
-
-        FileOutputStream fos = new FileOutputStream(tempFile);
-        BufferedOutputStream bos = new BufferedOutputStream(fos);
-        DataOutputStream dos = new DataOutputStream(bos);
 
         List<String> existingEntries = new ArrayList<>();
         while (dis.available() > 0) {
@@ -499,72 +496,45 @@ public class Arsip {
                 dis.skipBytes((int) fileSize + 32);
             }
         }
-        // Write updated entries
-        // System.out.println(existingEntries.toString());
-        updateEntries(dir, "", existingEntries, dos);
-        // System.out.println(existingEntries.toString());
-
-        dos.close();
-        bos.close();
-        fos.close();
         dis.close();
         bis.close();
         fis.close();
 
-        File originalFile = new File(archiveFilePath);
-        if (originalFile.delete()) {
-            if (!tempFile.renameTo(originalFile)) {
-                System.out.println("Failed to rename the temporary archive file.");
-            } else {
-                System.out.println("Archive file successfully updated.");
-                tempFile.delete();
+        List<String> sourceEntries = new ArrayList<>();
+        sourceEntries = checkSourceEntries(dir, "");
+        System.out.println("existing" + existingEntries.toString());
+        System.out.println("source" + sourceEntries.toString());
+        for (String entry : sourceEntries) {
+            if (existingEntries.contains(entry) && !entry.endsWith("/")) {
+                deleteEntry(archiveFilePath, entry);
+                System.out.println("delete");
             }
-        } else {
-            System.out.println("Failed to delete the original archive file.");
         }
-
+        archiveFiles(dir, archiveFilePath, "");
     }
 
-    private static void updateEntries(File dir, String basePath, List<String> existingEntries,
-            DataOutputStream dos)
+    private static List<String> checkSourceEntries(File dir, String basePath)
             throws IOException, NoSuchAlgorithmException {
         File[] files = dir.listFiles();
+        List<String> sourceEntries = new ArrayList<>();
+        if (basePath != "") {
+            String entryName = basePath;
+            System.out.println("base entry" + entryName);
+            sourceEntries.add(entryName);
+        }
         if (files != null) {
             for (File file : files) {
-                String entryName = basePath + file.getPath().replace(dir.getPath() + File.separator, "");
                 if (file.isDirectory()) {
-                    if (existingEntries.contains(entryName)) {
-                        existingEntries.remove(entryName);
-                    }
-                    writeEntry(file, entryName + "/", dos);
-                    existingEntries.add(entryName);
-                    updateEntries(file, file.getName() + "/", existingEntries, dos);
+                    checkSourceEntries(file, basePath + file.getName() + "/");
                 } else {
-                    if (existingEntries.contains(entryName)) {
-                        existingEntries.remove(entryName);
-                    }
-                    writeEntry(file, entryName, dos);
-                    existingEntries.add(entryName);
+                    String entryName = basePath + file.getPath().replace(dir.getPath() + File.separator, "");
+                    System.out.println("file entry" + entryName);
+                    sourceEntries.add(entryName);
                 }
             }
         }
-    }
-
-    private static void writeEntry(File file, String entryName, DataOutputStream dos)
-            throws IOException, NoSuchAlgorithmException {
-        String lenghString = String.format("%05d", entryName.length());
-        dos.writeBytes(lenghString);
-        dos.writeBytes(entryName);
-        dos.writeLong(file.length());
-        if (!file.isDirectory()) {
-            FileInputStream fis = new FileInputStream(file);
-            String checksum = calculateMD5(file);
-            byte[] buffer = new byte[(int) file.length()];
-            fis.read(buffer);
-            dos.write(buffer);
-            fis.close();
-            dos.writeBytes(checksum);
-        }
+        System.out.println(sourceEntries.toString());
+        return sourceEntries;
     }
 
     private static String calculateMD5(File file) throws IOException, NoSuchAlgorithmException {
