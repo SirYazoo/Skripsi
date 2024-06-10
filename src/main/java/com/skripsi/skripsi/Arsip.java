@@ -504,12 +504,12 @@ public class Arsip {
 
         // List<String> sourceEntries = new ArrayList<>();
         checkSourceEntries(dir, "");
-        System.out.println("existing" + existingEntries.toString());
-        System.out.println("source" + sourceEntries.toString());
+        // System.out.println("existing" + existingEntries.toString());
+        // System.out.println("source" + sourceEntries.toString());
         for (String entry : sourceEntries) {
             if (existingEntries.contains(entry) && !entry.endsWith("/")) {
                 deleteEntry(archiveFilePath, entry);
-                System.out.println("delete");
+                // System.out.println("delete");
             }
         }
         archiveFiles(dir, archiveFilePath, "");
