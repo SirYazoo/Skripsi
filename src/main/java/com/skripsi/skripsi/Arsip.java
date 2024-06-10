@@ -19,7 +19,7 @@ import java.util.Scanner;
 
 public class Arsip {
 
-    static List<String> sourceEntries = new ArrayList<>();
+    private static List<String> sourceEntries = new ArrayList<>();
 
     public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
