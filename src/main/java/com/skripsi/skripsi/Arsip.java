@@ -90,7 +90,6 @@ public class Arsip {
             String entryToDelete = reader.readLine();
 
             deleteEntry(archiveFilePathDelete, entryToDelete);
-            System.out.println("Specific file or folder deleted successfully.");
         } else if (choice == 7) {
             System.out.print("Enter the path to the source directory: ");
             String sourceDir = reader.readLine();
@@ -118,7 +117,6 @@ public class Arsip {
             dos.writeBytes(lenghString);
             dos.writeBytes(entryName);
             dos.writeLong(0);
-            // System.out.println("Created Directory: " + basePath); // Debug output
         }
 
         File[] files = dir.listFiles();
@@ -126,7 +124,7 @@ public class Arsip {
         if (files != null) {
             for (File file : files) {
                 if (file.isDirectory()) {
-                    System.out.println("Archiving Directory: " + basePath + file.getName() + "/"); // Debug output
+                    System.out.println("Archiving Directory: " + basePath + file.getName() + "/");
                     archiveFiles(file, archiveFilePath, basePath + file.getName() + "/");
                 } else {
                     String entryName = basePath + file.getPath().replace(dir.getPath() + File.separator, "");
@@ -134,10 +132,10 @@ public class Arsip {
                     dos.writeBytes(lenghString);
                     dos.writeBytes(entryName);
                     dos.writeLong(file.length());
-                    System.out.println("Archiving File: " + entryName); // Debug output
+                    System.out.println("Archiving File: " + entryName);
 
                     FileInputStream fis = new FileInputStream(file);
-                    String checksum = calculateMD5(file); // Calculate and store MD5 checksum for each file;
+                    String checksum = calculateMD5(file);
                     byte[] buffer = new byte[(int) file.length()];
                     fis.read(buffer);
                     dos.write(buffer);
