@@ -127,7 +127,7 @@ public class Arsip {
                     System.out.println("Archiving Directory: " + basePath + file.getName() + "/");
                     archiveFiles(file, archiveFilePath, basePath + file.getName() + "/");
                 } else {
-                    String entryName = basePath + file.getPath().replace(dir.getPath() + File.separator, "");
+                    String entryName = basePath + file.getPath().replace(dir.getPath() + File.separator, ""); //replace absolute path
                     String lenghString = String.format("%05d", entryName.length());
                     dos.writeBytes(lenghString);
                     dos.writeBytes(entryName);
@@ -340,10 +340,10 @@ public class Arsip {
             System.out.println("Contents:");
 
             for (String entry : entries) {
-                if (entry.startsWith(currentPath)) {
+                if (entry.startsWith(currentPath)) { //pastikan yang diprint hanya folder dan file yang ada di current path
                     String relativePath = entry.substring(currentPath.length());
-                    if (!relativePath.isEmpty() && !relativePath.contains("/") || relativePath.endsWith("/")) {
-                        if (relativePath.indexOf("/") == relativePath.lastIndexOf("/")) {
+                    if (!relativePath.isEmpty() && !relativePath.contains("/") || relativePath.endsWith("/")) { 
+                        if (relativePath.indexOf("/") == relativePath.lastIndexOf("/")) { //pastikan relative path adalah direct child
                             if (relativePath.endsWith("/")) {
                                 System.out.println("Directory: " + relativePath);
                             } else {
@@ -362,7 +362,7 @@ public class Arsip {
             } else if (userInput.equals("..")) {
                 if (!currentPath.isEmpty()) {
                     if (currentPath.endsWith("/")) {
-                        currentPath = currentPath.substring(0, currentPath.length() - 1);
+                        currentPath = currentPath.substring(0, currentPath.length() - 1); //menghilangkan slash paling terakhir
                         // System.out.println(currentPath);
                     }
                     int lastSlash = currentPath.lastIndexOf("/");
