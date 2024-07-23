@@ -26,18 +26,18 @@ public class Arsip {
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 
-            System.out.println("Choose an option:");
-            System.out.println("1. Archive files");
-            System.out.println("2. Extract files");
-            System.out.println("3. List archive contents");
-            System.out.println("4. Extract specific file");
-            System.out.println("5. Extract specific folder");
-            System.out.println("6. Delete specific file or folder");
-            System.out.println("7. Archive to an existing archive");
-            System.out.print("Enter your choice (1, 2, 3, 4, 5, 6, or 7): ");
-            int choice = Integer.parseInt(reader.readLine());
+            // System.out.println("Choose an option:");
+            // System.out.println("1. Archive files");
+            // System.out.println("2. Extract files");
+            // System.out.println("3. List archive contents");
+            // System.out.println("4. Extract specific file");
+            // System.out.println("5. Extract specific folder");
+            // System.out.println("6. Delete specific file or folder");
+            // System.out.println("7. Archive to an existing archive");
+            // System.out.print("Enter your choice (1, 2, 3, 4, 5, 6, or 7): ");
+            // int choice = Integer.parseInt(reader.readLine());
 
-            if (choice == 1) {
+            if (args[0].equals("-c")) {
                 System.out.print("Enter the path to the source directory: ");
                 String sourceDir = reader.readLine();
 
@@ -46,7 +46,7 @@ public class Arsip {
 
                 archiveFiles(new File(sourceDir), archiveFilePath, "");
                 System.out.println("Files archived successfully.");
-            } else if (choice == 2) {
+            } else if (args[0].equals("-x")) {
                 System.out.print("Enter the path to the archive file: ");
                 String archiveFilePathExtract = reader.readLine();
 
@@ -54,12 +54,12 @@ public class Arsip {
                 String extractionDir = reader.readLine();
 
                 extractFiles(archiveFilePathExtract, extractionDir);
-            } else if (choice == 3) {
+            } else if (args[0].equals("-t")) {
                 System.out.print("Enter the path to the archive file: ");
                 String archiveFilePathList = reader.readLine();
 
                 listArchiveContents(archiveFilePathList);
-            } else if (choice == 4) {
+            } else if (args[0].equals("-xfi")) {
                 System.out.print("Enter the path to the archive file: ");
                 String archiveFilePathExtract = reader.readLine();
 
@@ -70,7 +70,7 @@ public class Arsip {
                 String entryToExtract = reader.readLine();
 
                 extractSpecificFile(archiveFilePathExtract, extractionDir, entryToExtract);
-            } else if (choice == 5) {
+            } else if (args[0].equals("-xfo")) {
                 System.out.print("Enter the path to the archive file: ");
                 String archiveFilePathExtract = reader.readLine();
 
@@ -81,7 +81,7 @@ public class Arsip {
                 String entryToExtract = reader.readLine();
 
                 extractSpecificFolder(archiveFilePathExtract, extractionDir, entryToExtract);
-            } else if (choice == 6) {
+            } else if (args[0].equals("-d")) {
                 System.out.print("Enter the path to the archive file: ");
                 String archiveFilePathDelete = reader.readLine();
 
@@ -89,7 +89,7 @@ public class Arsip {
                 String entryToDelete = reader.readLine();
 
                 deleteEntry(archiveFilePathDelete, entryToDelete);
-            } else if (choice == 7) {
+            } else if (args[0].equals("-u")) {
                 System.out.print("Enter the path to the source directory: ");
                 String sourceDir = reader.readLine();
 
