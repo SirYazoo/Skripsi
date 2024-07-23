@@ -129,9 +129,7 @@ public class Arsip {
                         System.out.println("Archiving Directory: " + basePath + file.getName() + "/");
                         archiveFiles(file, archiveFilePath, basePath + file.getName() + "/");
                     } else {
-                        String entryName = basePath + file.getPath().replace(dir.getPath() + File.separator, ""); // replace
-                                                                                                                  // absolute
-                                                                                                                  // path
+                        String entryName = basePath + file.getPath().replace(dir.getPath() + File.separator, ""); // replace absolute path
                         String lenghString = String.format("%05d", entryName.length());
                         dos.writeBytes(lenghString);
                         dos.writeBytes(entryName);
@@ -204,8 +202,12 @@ public class Arsip {
             bis.close();
             fis.close();
             System.out.println("Files extracted successfully.");
-        } catch (IOException | NegativeArraySizeException e) {
+        } catch (IOException e) {
             System.err.println("Failed to extract files");
+        } catch (NegativeArraySizeException e) {
+            System.err.println("Failed to extract files due to invalid file size");
+        } catch (NumberFormatException e) {
+            System.err.println("Failed to parse entry name length");
         }
     }
 
